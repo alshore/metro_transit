@@ -1,19 +1,23 @@
-package command_line;
+package gui_swing_worker_json_reader;
 
 import com.google.gson.stream.JsonReader;
 
+import javax.swing.*;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Created by clara on 11/11/16.
  *
  * Get the next bus from MCTC to First Avenue with a HTTP request, and parsing the JSON.
+ *
+ * Use a SwingWorker to execute the fetch in the background.
+ *
  */
 public class NextBus {
-
-    public static void main(String[] args) {
 
         /* When is the next northbound 6 bus from MCTC?
 
@@ -36,44 +40,46 @@ public class NextBus {
         */
 
 
+    public static void getTimes(NextBusGUI sendResultsHere) {
+
+        String url = "http://svc.metrotransit.org/NexTrip/6/4/MCTC?format=json\n";
+        BusWorker worker = new BusWorker(url, sendResultsHere);
+        worker.execute();
+    }
+}
+
+
+//The types in pointy brackets: ArrayList<String> is the type of object the doInBackground method returns.
+// Optionally, some backgroundTask make progress notifications by returning objects periodically -
+//Set it to Void (just an empty placeholder) if you don't need to make progress updates.
+
+class BusWorker extends SwingWorker<ArrayList<String>, Void> {
+    private NextBusGUI resultListener;
+    private String getBusTimesUrlString;
+
+    //Constructor - use to send data to your worker and do any initialization
+    public BusWorker(String urlRequest, NextBusGUI resultListener) {
+        this.getBusTimesUrlString = urlRequest;
+        this.resultListener = resultListener;
+    }
+
+    @Override
+    //This method is required. It must have the same return type as you specified in the class definition: BusWorker extends SwingWorker<Document, Void>. This is where you'll do the time-consuming task.
+    protected ArrayList<String> doInBackground() throws Exception {
         try {
 
-            URL getBusTimesURL = new URL("http://svc.metrotransit.org/NexTrip/6/4/MCTC?format=json");
+            ArrayList<String> times = new ArrayList<>();
 
+            URL getBusTimesUrl = new URL(getBusTimesUrlString);
             //Open the URL - connect to the URL, expecting a stream of data returned
-            InputStream stream = getBusTimesURL.openStream();
+            InputStream stream = getBusTimesUrl.openStream();
             //Create a InputStreamReader to read the Stream
             InputStreamReader streamReader = new InputStreamReader(stream);
-
-            /*
-
-            //Could read all of the data directly from the InputStreamReader, into a String, like this
-            //Don't do this AND the JsonReader - this code will consume the entire stream, and there will be nothing left for the JsonReader to read.
-
-            int char_int = 0;
-            String responseString = "";  //to store the String of the response
-            //the reader returns characters (as integers) until the end of the stream is reached, when it returns -1
-            while ((char_int = streamReader.read()) != -1) {
-                //cast the int into a char
-                char character = (char) char_int;
-                //and append to the String
-                responseString = responseString + character;
-            }
-
-            System.out.println(responseString);   //should contain the entire text of the JSON response
-
-            */
-
-            /* Use JsonReader to read the JSON as a stream.
-            This approach is recommended, because you don't know how much data you'll get back.
-            Trying to read a large amount of data into a String could overwhelm your computer.
-
-             */
 
             JsonReader reader = new JsonReader(streamReader);
 
             //How is the response structured? It's a JSON array, each array element contains an object.
-            //The objects are strucured as key-value pairs
+            //The objects are structured as key-value pairs
             // Each object contains a key "DepartureText" with the value of either the time to next
             // departure (e.g. "12 Min") or scheduled departure time (e.g. "15:44")
 
@@ -97,8 +103,8 @@ public class NextBus {
 
                         //read the String value for "DepartureText"
                         String departureString = reader.nextString();
-                        //And print. Could also add to an ArrayList or do whatever else you need
-                        System.out.println(departureString);
+                        times.add(departureString);
+
                     }
                     // If the name is not departureText, we don't care.
                     // We have to read every part of the JSON so can't just ignore, instead, tell the reader to skip to next value
@@ -119,12 +125,28 @@ public class NextBus {
             streamReader.close();
             reader.close();
 
+            return times;
 
         } catch (Exception e) {
             e.printStackTrace();
             //todo deal properly with the various exceptions that could occur
             //malformed URL, web exceptions, json parsing exceptions..
+            return null;
+        }
+    }
+
+    @Override
+    protected void done() {
+
+        try {
+            ArrayList<String> busTimes = get();    //get() fetches whatever you returned from doInBackground.
+            resultListener.timesFetched(busTimes);
+        } catch (ExecutionException | InterruptedException e) {
+            resultListener.timesFetched(null);
         }
 
     }
+
+
+
 }

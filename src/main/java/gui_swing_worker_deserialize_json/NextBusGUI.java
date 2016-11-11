@@ -1,4 +1,4 @@
-package gui_swing_worker;
+package gui_swing_worker_deserialize_json;
 
 import javax.swing.*;
 import java.awt.*;
@@ -30,18 +30,24 @@ public class NextBusGUI extends JFrame {
     }
 
 
-    void timesFetched(ArrayList<String> times) {
+    void timesFetched(BusDeparture[] times) {
 
         if (times == null) {
             statusLabel.setText("Error fetching times");
-        } else if (times.size() == 0) {
+
+        } else if (times.length == 0) {
             statusLabel.setText("No upcoming departures found");
+
         } else {
 
             String displayString = "";
 
-            for (String time : times) {
-                displayString = displayString + (time + "\n");
+            for (BusDeparture departure : times) {
+                String timeReportedFromBus = departure.getActual().equalsIgnoreCase("True") ? " (actual time reported by the bus)" : " (from schedule)";
+
+                String departureString = departure.getDepartureText() + timeReportedFromBus;
+                displayString = displayString + departureString + "\n";
+
             }
 
             busTimes.setText(displayString);

@@ -1,5 +1,6 @@
-package gui_swing_worker;
+package gui_swing_worker_deserialize_json;
 
+import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 
 import javax.swing.*;
@@ -12,7 +13,7 @@ import java.util.concurrent.ExecutionException;
 /**
  * Created by clara on 11/11/16.
  *
- * Get the next bus from MCTC to First Avenue with a HTTP request, and parsing the JSON.
+ * Get the next bus from MCTC to First Avenue with a HTTP request, and deserializing the JSON.
  *
  * Use a SwingWorker to execute the fetch in the background.
  *
@@ -53,7 +54,7 @@ public class NextBus {
 // Optionally, some backgroundTask make progress notifications by returning objects periodically -
 //Set it to Void (just an empty placeholder) if you don't need to make progress updates.
 
-class BusWorker extends SwingWorker<ArrayList<String>, Void> {
+class BusWorker extends SwingWorker<BusDeparture[], Void> {
     private NextBusGUI resultListener;
     private String getBusTimesUrlString;
 
@@ -65,10 +66,8 @@ class BusWorker extends SwingWorker<ArrayList<String>, Void> {
 
     @Override
     //This method is required. It must have the same return type as you specified in the class definition: BusWorker extends SwingWorker<Document, Void>. This is where you'll do the time-consuming task.
-    protected ArrayList<String> doInBackground() throws Exception {
+    protected BusDeparture[] doInBackground() throws Exception {
         try {
-
-            ArrayList<String> times = new ArrayList<>();
 
             URL getBusTimesUrl = new URL(getBusTimesUrlString);
             //Open the URL - connect to the URL, expecting a stream of data returned
@@ -78,54 +77,21 @@ class BusWorker extends SwingWorker<ArrayList<String>, Void> {
 
             JsonReader reader = new JsonReader(streamReader);
 
-            //How is the response structured? It's a JSON array, each array element contains an object.
-            //The objects are structured as key-value pairs
-            // Each object contains a key "DepartureText" with the value of either the time to next
-            // departure (e.g. "12 Min") or scheduled departure time (e.g. "15:44")
+            Gson gson = new Gson();
 
-            //Start reading the array
-            reader.beginArray();
+            //fromJson - tell it the source of JSON, the JsonReader
+            //The JSON is an array of bus departure data objects
+            //And the type of object to turn the JSON into - in this case, an array of BusDepartures object
+            //And it will turn the JSON into an array of BusDepartures!
 
-            //While there is another item in the array...
-            while (reader.hasNext()) {
-
-                //each item in the array is an object. Start reading this object
-                reader.beginObject();
-
-                //and while there is another key-value pair in the array
-                while (reader.hasNext()) {
-
-                    //read the name of the key
-                    String name = reader.nextName();
-
-                    //if the key is "DepartureText"
-                    if (name.equals("DepartureText")) {
-
-                        //read the String value for "DepartureText"
-                        String departureString = reader.nextString();
-                        times.add(departureString);
-
-                    }
-                    // If the name is not departureText, we don't care.
-                    // We have to read every part of the JSON so can't just ignore, instead, tell the reader to skip to next value
-                    else {
-                        reader.skipValue();
-                    }
-                }
-
-                //And once the entire object is processed, tell the reader to stop processing this object
-                reader.endObject();
-            }
-
-            //And that's the end of the array.
-            reader.endArray();
+            BusDeparture[] departures = gson.fromJson(reader, BusDeparture[].class);
 
             //Close resources
             stream.close();
             streamReader.close();
             reader.close();
 
-            return times;
+            return departures;
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -139,9 +105,10 @@ class BusWorker extends SwingWorker<ArrayList<String>, Void> {
     protected void done() {
 
         try {
-            ArrayList<String> busTimes = get();    //get() fetches whatever you returned from doInBackground.
-            resultListener.timesFetched(busTimes);
+            BusDeparture[] departures = get();    //get() fetches whatever you returned from doInBackground.
+            resultListener.timesFetched(departures);
         } catch (ExecutionException | InterruptedException e) {
+            e.printStackTrace();
             resultListener.timesFetched(null);
         }
 

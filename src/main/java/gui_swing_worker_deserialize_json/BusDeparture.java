@@ -1,4 +1,4 @@
-package deserialize_json;
+package gui_swing_worker_deserialize_json;
 
 /**
  * Created by Clara on 11/11/16.

@@ -1,4 +1,4 @@
-package deserialize_json;
+package command_line_deserialize_json;
 
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
@@ -61,6 +61,7 @@ public class NextBus {
             BusDeparture[] departures = gson.fromJson(reader, BusDeparture[].class);
 
             //Close resources
+            reader.close();
             stream.close();
             streamReader.close();
 
