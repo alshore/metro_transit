@@ -13,11 +13,13 @@ Make web request, use GSON to turn JSON into Java object
 **gui_swing_worker_json_reader**
 
 Use a SwingWorker to execute the web request and JSON parsing in a separate thread
+
 Like command line version - makes web request, use GSON to process JSON piece by piece
 
 **gui_swing_worker_deserialize_json**
 
 Use a SwingWorker to execute the web request and JSON parsing in a separate thread
+
 Like command line version - makes web request, Use GSON to turn JSON into Java object
 
 
