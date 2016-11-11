@@ -1,6 +1,8 @@
 package command_line_json_reader;
 
 import com.google.gson.stream.JsonReader;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -45,10 +47,7 @@ public class NextBus {
             //Create a InputStreamReader to read the Stream
             InputStreamReader streamReader = new InputStreamReader(stream);
 
-            /*
-
-            //Could read all of the data directly from the InputStreamReader, into a String, like this
-            //Don't do this AND the JsonReader - this code will consume the entire stream, and there will be nothing left for the JsonReader to read.
+            //Read all of the data directly from the InputStreamReader, into a String, like this
 
             int char_int = 0;
             String responseString = "";  //to store the String of the response
@@ -62,62 +61,28 @@ public class NextBus {
 
             System.out.println(responseString);   //should contain the entire text of the JSON response
 
-            */
+            // Reading the documentation to figure out the structure of the JSON helps figure out how to parse it in your code.
 
-            /* Use JsonReader to read the JSON as a stream.
-            This approach is recommended, because you don't know how much data you'll get back.
-            Trying to read a large amount of data into a String could overwhelm your computer.
+//            JSONObject jsonArrayOfDepartures = new JSONObject(responseString);
+            //The response is an array of objects
+            JSONArray departuresArray = new JSONArray(responseString);
 
-             */
+            //Loop over this JSONArray
+            for ( int i = 0 ; i < departuresArray.length() ; i++) {
 
-            JsonReader reader = new JsonReader(streamReader);
+                //Get an object from the array
+                JSONObject departureObject = departuresArray.getJSONObject(i);
+                //get the DepartureText element
+                String departureText = departureObject.getString("DepartureText");
+                System.out.println(departureText);
 
-            //How is the response structured? It's a JSON array, each array element contains an object.
-            //The objects are strucured as key-value pairs
-            // Each object contains a key "DepartureText" with the value of either the time to next
-            // departure (e.g. "12 Min") or scheduled departure time (e.g. "15:44")
-
-            //Start reading the array
-            reader.beginArray();
-
-            //While there is another item in the array...
-            while (reader.hasNext()) {
-
-                //each item in the array is an object. Start reading this object
-                reader.beginObject();
-
-                //and while there is another key-value pair in the array
-                while (reader.hasNext()) {
-
-                    //read the name of the key
-                    String name = reader.nextName();
-
-                    //if the key is "DepartureText"
-                    if (name.equals("DepartureText")) {
-
-                        //read the String value for "DepartureText"
-                        String departureString = reader.nextString();
-                        //And print. Could also add to an ArrayList or do whatever else you need
-                        System.out.println(departureString);
-                    }
-                    // If the name is not departureText, we don't care.
-                    // We have to read every part of the JSON so can't just ignore, instead, tell the reader to skip to next value
-                    else {
-                        reader.skipValue();
-                    }
-                }
-
-                //And once the entire object is processed, tell the reader to stop processing this object
-                reader.endObject();
             }
 
-            //And that's the end of the array.
-            reader.endArray();
+
 
             //Close resources
             stream.close();
             streamReader.close();
-            reader.close();
 
 
         } catch (Exception e) {
