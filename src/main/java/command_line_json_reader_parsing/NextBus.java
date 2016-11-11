@@ -1,4 +1,4 @@
-package command_line_org_json_parsing;
+package command_line_json_reader_parsing;
 
 import com.google.gson.stream.JsonReader;
 

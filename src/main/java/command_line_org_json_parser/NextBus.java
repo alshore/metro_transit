@@ -1,6 +1,5 @@
-package command_line_json_reader;
+package command_line_org_json_parser;
 
-import com.google.gson.stream.JsonReader;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -63,7 +62,6 @@ public class NextBus {
 
             // Reading the documentation to figure out the structure of the JSON helps figure out how to parse it in your code.
 
-//            JSONObject jsonArrayOfDepartures = new JSONObject(responseString);
             //The response is an array of objects
             JSONArray departuresArray = new JSONArray(responseString);
 
